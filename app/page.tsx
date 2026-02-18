@@ -53,7 +53,7 @@ export default function HomePage() {
             {/* Badge kecil di atas judul */}
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-blue-100">
               <Sparkles size={14} />
-              Website Resmi OSIS SMPN 3
+              Website Resmi OSIS SMP Negeri 3 Makassar
             </div>
 
             <h2 className="text-5xl md:text-7xl font-black text-slate-900 mb-8 tracking-tighter leading-[1.1]">
@@ -64,7 +64,7 @@ export default function HomePage() {
             </h2>
 
             <p className="text-lg md:text-xl text-slate-500 mb-12 leading-relaxed max-w-2xl mx-auto font-medium">
-              Bersama OSIS SPENTIG, kita ciptakan lingkungan sekolah yang inovatif, kreatif, dan penuh kolaborasi untuk masa depan yang lebih cerah.
+              Bersama OSIS, kita ciptakan lingkungan sekolah yang inovatif, kreatif, dan penuh kolaborasi untuk masa depan yang lebih cerah.
             </p>
             
             {/* Tombol Aksi */}
@@ -98,7 +98,7 @@ export default function HomePage() {
             </p>
             <div className="h-px w-12 bg-slate-200 my-2"></div>
             <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
-              © {new Date().getFullYear()} - Dibuat dengan semangat kolaborasi
+              © {new Date().getFullYear()} - Dibuat dengan semangat kolaborasi oleh OSIS SMPN 3 Makassar
             </p>
           </div>
         </div>
