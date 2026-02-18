@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Tabel Masa Jabatan
+model Term {
+  id        Int       @id @default(autoincrement())
+  year      String    // Contoh: "2024/2025"
+  isActive  Boolean   @default(false)
+  profiles  Profile[]
+  programs  Program[]
+}
+
+// Tabel Profil Jabatan
+model Profile {
+  id        Int      @id @default(autoincrement())
+  name      String   // Nama Siswa
+  role      String   // Jabatan (Ketua, Wakil, dsb)
+  vision    String?  // Visi misi atau deskripsi
+  imageUrl  String?  // Link gambar dari Uploadthing
+  termId    Int
+  term      Term     @relation(fields: [termId], references: [id])
+}
+
+// Tabel Program Kerja
+model Program {
+  id          Int      @id @default(autoincrement())
+  title       String   // Nama Proker
+  description String   @db.Text
+  status      String   // "Terlaksana", "Belum Terlaksana", "Sedang Berjalan"
+  termId      Int
+  term        Term     @relation(fields: [termId], references: [id])
+}
