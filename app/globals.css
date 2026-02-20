@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@uploadthing/react/styles.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -123,4 +124,20 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Menghilangkan label default UploadThing yang sering bikin layout pecah */
+label[data-ut-element="button"] {
+  display: none !important;
+}
+
+.ut-button {
+  background-color: #2563eb !important; /* Biru Tailwind 600 */
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.ut-allowed-content {
+  color: #64748b !important;
 }

@@ -27,7 +27,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
                   type="text" 
                   required 
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                  placeholder="adminosis"
+                  placeholder="Masukkan username..."
                 />
               </div>
             </div>
@@ -41,7 +41,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
                   type="password" 
                   required 
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                  placeholder="••••••••"
+                  placeholder="Masukkan password..."
                 />
               </div>
             </div>

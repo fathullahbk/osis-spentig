@@ -47,7 +47,7 @@ export default async function KelolaMasaBaktiPage() {
         <p className="text-slate-500 mt-2">Tentukan periode kepengurusan OSIS (Contoh: 2023/2024).</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-1 md:grid-cols-3 gap-8">
         
         {/* FORM TAMBAH MASA BAKTI */}
         <div className="lg:col-span-1">

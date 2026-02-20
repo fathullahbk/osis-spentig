@@ -1,93 +1,94 @@
 import prisma from "@/lib/prisma";
-import Link from "next/link";
-import { ArrowLeft, LayoutList, Calendar, CheckCircle2, Clock, PlayCircle } from "lucide-react";
+import { ClipboardList, CheckCircle2, Clock } from "lucide-react";
 
-export default async function ProgramKerjaPublikPage() {
-  // Ambil data dari database
-  const programs = await prisma.program.findMany({
-    include: { term: true },
-    orderBy: { id: 'desc' }
+export default async function ProgramKerjaPublicPage() {
+  // Mengambil masa bakti terbaru (Aktif)
+  const activeTerm = await prisma.term.findFirst({
+    orderBy: { year: 'desc' },
   });
 
-  // Fungsi helper untuk ikon status
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case "Terlaksana": 
-        return { color: "text-green-600 bg-green-50", icon: <CheckCircle2 size={16} /> };
-      case "Sedang Berjalan": 
-        return { color: "text-blue-600 bg-blue-50", icon: <PlayCircle size={16} /> };
-      default: 
-        return { color: "text-amber-600 bg-amber-50", icon: <Clock size={16} /> };
-    }
-  };
+  // Mengambil program kerja yang sesuai dengan masa bakti aktif
+  const programs = await prisma.program.findMany({
+    where: { termId: activeTerm?.id },
+    include: { leader: true },
+    orderBy: { id: 'desc' },
+  });
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header Section */}
-      <div className="bg-white border-b border-slate-200 py-12 mb-10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6">
-          <Link 
-            href="/" 
-            className="inline-flex items-center gap-2 text-blue-600 font-bold mb-6 hover:translate-x-[-4px] transition-transform"
-          >
-            <ArrowLeft size={20} />
-            Kembali ke Beranda
-          </Link>
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <LayoutList className="text-blue-600" size={36} />
-            Program Kerja OSIS
-          </h1>
-          <p className="text-lg text-slate-500 mt-2 font-medium">Transparansi inisiatif dan kegiatan OSIS SPENTIG untuk masa bakti yang aktif.</p>
+    <div className="max-w-5xl mx-auto py-10 px-4">
+      {/* Header Halaman */}
+      <div className="flex items-center gap-3 mb-8 border-b pb-6">
+        <div className="p-2 bg-purple-50 rounded-lg">
+          <ClipboardList className="text-purple-600" size={24} />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Program Kerja OSIS</h1>
+          <p className="text-slate-500 text-sm">
+            Transparansi inisiatif dan kegiatan untuk Masa Bakti {activeTerm?.year || "-"}
+          </p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6">
-        {programs.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400">
-            <LayoutList size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="text-lg font-medium">Belum ada program kerja yang dipublikasikan.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {programs.map((program) => {
-              const statusStyle = getStatusInfo(program.status);
-              return (
-                <div 
-                  key={program.id} 
-                  className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 group"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                    <div>
-                      {/* PERBAIKAN: Gunakan program.title sesuai schema */}
-                      <h3 className="text-2xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
-                        {program.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-current ${statusStyle.color}`}>
-                          {statusStyle.icon}
-                          {program.status}
-                        </div>
+      {/* Tabel Program Kerja */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <tr>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider w-16 text-center">No</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider">Program Kerja</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider">Penanggung Jawab</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {programs.length > 0 ? (
+              programs.map((prog, index) => (
+                <tr key={prog.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-slate-500 font-medium text-center">{index + 1}</td>
+                  <td className="px-6 py-4">
+                    <div className="font-semibold text-slate-800">{prog.title}</div>
+                    {prog.description && (
+                      <div className="text-xs text-slate-400 mt-0.5 line-clamp-1 italic">
+                        "{prog.description}"
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl uppercase tracking-wider border border-slate-100">
-                      <Calendar size={14} />
-                      Masa Bakti {program.term?.year}
-                    </div>
-                  </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-slate-600">
+                    {prog.leader?.name || (
+                      <span className="text-slate-400 text-xs italic italic">Belum ditentukan</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                      prog.status === 'Terlaksana' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {prog.status === 'Terlaksana' ? (
+                        <CheckCircle2 size={12} />
+                      ) : (
+                        <Clock size={12} />
+                      )}
+                      {prog.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
+                  Belum ada program kerja yang tercatat untuk periode ini.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-                  <p className="text-slate-600 leading-relaxed font-medium">
-                    {program.description}
-                  </p>
-                  
-                  <div className="mt-8 pt-6 border-t border-slate-50 flex justify-end italic text-xs text-slate-400">
-                    OSIS SPENTIG &bull; {program.term?.year}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+      <div className="mt-8 text-center">
+        <a href="/" className="text-sm text-slate-500 hover:text-purple-600 transition-colors">
+          ← Kembali ke Beranda
+        </a>
       </div>
     </div>
   );

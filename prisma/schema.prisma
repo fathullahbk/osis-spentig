@@ -30,6 +30,7 @@ model Profile {
   imageUrl  String?  // Link gambar dari Uploadthing
   termId    Int
   term      Term     @relation(fields: [termId], references: [id])
+  programs  Program[] @relation("ProgramLeader")
 }
 
 // Tabel Program Kerja
@@ -40,4 +41,6 @@ model Program {
   status      String   // "Terlaksana", "Belum Terlaksana", "Sedang Berjalan"
   termId      Int
   term        Term     @relation(fields: [termId], references: [id])
+  leaderId    Int?     // Bisa kosong (optional) jika PJ belum ditentukan
+  leader      Profile? @relation("ProgramLeader", fields: [leaderId], references: [id])
 }

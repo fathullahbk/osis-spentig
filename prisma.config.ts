@@ -1,8 +1,11 @@
 import { defineConfig } from '@prisma/config';
+import * as dotenv from 'dotenv';
+
+// Perintah ini sangat penting agar process.env tidak kosong
+dotenv.config();
 
 export default defineConfig({
   datasource: {
-    // Kita arahkan url ke environment variable DATABASE_URL
     url: process.env.DATABASE_URL,
   },
 });
