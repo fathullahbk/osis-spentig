@@ -59,7 +59,7 @@ export default function HomePage() {
 
             {/* Judul Utama */}
             <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-slate-900 mb-6 md:mb-8 tracking-tighter leading-[1.1]">
-              OSIS Spentig<br />
+              OSIS Spentig Makassar<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                 Wadah Kolaborasi
               </span>
@@ -101,7 +101,11 @@ export default function HomePage() {
             </p>
             <div className="h-px w-12 bg-slate-200 my-1 md:my-2"></div>
             <p className="text-[10px] md:text-xs text-slate-400 font-medium uppercase tracking-widest px-2">
-              © {new Date().getFullYear()} - Dibuat dengan semangat kolaborasi oleh OSIS SMPN 3 Makassar
+              © {new Date().getFullYear()} - OSIS SPENTIG Makassar • Developed by <a href="https://fathullahbk.github.io/portofolio/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-slate-600 font-black hover:text-blue-600 transition-colors cursor-pointer">
+                Fathullah, S.Pd</a>
             </p>
           </div>
         </div>
