@@ -1,3 +1,4 @@
+// app/profil/page.tsx
 import React from "react";
 import prisma from "@/lib/prisma";
 import { Users } from "lucide-react";
@@ -10,7 +11,7 @@ export default async function StrukturPengurusPage() {
 
   // Ambil pengurus pada masa bakti tersebut
   const profiles = await prisma.profile.findMany({
-    where: { termId: activeTerm?.id },
+    where: { termId: activeTerm?.id || 0 },
     orderBy: { name: "asc" },
   });
 
@@ -34,29 +35,41 @@ export default async function StrukturPengurusPage() {
         jabatanIntiList.indexOf(b.role)
     );
 
-  // 2️⃣ Kelompokkan per Bidang
+  // 2️⃣ Kelompokkan per Bidang & Tampung yang tidak terfilter
+  // Ubah ketua dan wakil menjadi Array agar bisa menampung > 1 orang
   const bidangMap: Record<
     number,
-    { ketua?: any; wakil?: any; anggota: any[] }
+    { ketua: any[]; wakil: any[]; anggota: any[] }
   > = {};
+  
+  // Penampung jika ada typo / jabatan di luar format agar data tidak hilang
+  const pengurusLainnya: any[] = []; 
 
   profiles.forEach((p) => {
-    const match = p.role.match(
-      /(Ketua|Wakil Ketua|Anggota) Bidang (\d+)/
-    );
+    // Lewati jika sudah masuk jabatan inti
+    if (jabatanIntiList.includes(p.role)) return;
+
+    // Regex diperlonggar (mendukung case-insensitive dan typo 'Anggot')
+    const match = p.role.match(/(Ketua|Wakil Ketua|Anggota|Anggot)\s*Bidang\s*(\d+)/i);
 
     if (match) {
-      const [, posisi, nomor] = match;
-      const bidangNumber = parseInt(nomor);
+      const posisiStr = match[1].toLowerCase();
+      const bidangNumber = parseInt(match[2]);
 
       if (!bidangMap[bidangNumber]) {
-        bidangMap[bidangNumber] = { anggota: [] };
+        bidangMap[bidangNumber] = { ketua: [], wakil: [], anggota: [] };
       }
 
-      if (posisi === "Ketua") bidangMap[bidangNumber].ketua = p;
-      else if (posisi === "Wakil Ketua")
-        bidangMap[bidangNumber].wakil = p;
-      else bidangMap[bidangNumber].anggota.push(p);
+      if (posisiStr === "ketua") {
+        bidangMap[bidangNumber].ketua.push(p);
+      } else if (posisiStr === "wakil ketua") {
+        bidangMap[bidangNumber].wakil.push(p);
+      } else {
+        bidangMap[bidangNumber].anggota.push(p);
+      }
+    } else {
+      // Masukkan ke pengurus lainnya jika tidak terdeteksi
+      pengurusLainnya.push(p);
     }
   });
 
@@ -137,46 +150,68 @@ export default async function StrukturPengurusPage() {
                       </tr>
 
                       {/* Ketua */}
-                      {bidang.ketua && (
-                        <tr className="hover:bg-slate-50">
+                      {bidang.ketua.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 text-slate-400">-</td>
                           <td className="px-6 py-4 font-semibold text-slate-800">
-                            {bidang.ketua.name}
+                            {p.name}
                           </td>
                           <td className="px-6 py-4 text-blue-600">
-                            {bidang.ketua.role}
+                            {p.role}
                           </td>
                         </tr>
-                      )}
+                      ))}
 
                       {/* Wakil */}
-                      {bidang.wakil && (
-                        <tr className="hover:bg-slate-50">
+                      {bidang.wakil.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 text-slate-400">-</td>
                           <td className="px-6 py-4 font-semibold text-slate-800">
-                            {bidang.wakil.name}
+                            {p.name}
                           </td>
                           <td className="px-6 py-4 text-blue-600">
-                            {bidang.wakil.role}
+                            {p.role}
                           </td>
                         </tr>
-                      )}
+                      ))}
 
                       {/* Anggota */}
-                      {bidang.anggota.map((anggota) => (
-                        <tr key={anggota.id} className="hover:bg-slate-50">
+                      {bidang.anggota.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 text-slate-400">-</td>
                           <td className="px-6 py-4 font-semibold text-slate-800">
-                            {anggota.name}
+                            {p.name}
                           </td>
                           <td className="px-6 py-4 text-blue-600">
-                            {anggota.role}
+                            {p.role}
                           </td>
                         </tr>
                       ))}
                     </React.Fragment>
                   );
                 })}
+
+                {/* ===== Pengurus Lainnya ===== */}
+                {pengurusLainnya.length > 0 && (
+                  <React.Fragment>
+                    <tr className="bg-slate-50 border-t-2 border-slate-200">
+                      <td colSpan={3} className="px-6 py-3 font-bold text-amber-600">
+                        Lainnya (Jabatan Tidak Dikenali/Typo)
+                      </td>
+                    </tr>
+                    {pengurusLainnya.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 text-slate-400">-</td>
+                        <td className="px-6 py-4 font-semibold text-slate-800">
+                          {p.name}
+                        </td>
+                        <td className="px-6 py-4 text-amber-600">
+                          {p.role}
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                )}
               </>
             ) : (
               <tr>
