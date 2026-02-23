@@ -1,32 +1,96 @@
+// app/program-kerja/page.tsx
+import React from "react";
 import prisma from "@/lib/prisma";
-import { ClipboardList, CheckCircle2, Clock } from "lucide-react";
+import { ClipboardList, CheckCircle2, Clock, Filter } from "lucide-react";
 
-export default async function ProgramKerjaPublicPage() {
-  // Mengambil masa bakti terbaru (Aktif)
-  const activeTerm = await prisma.term.findFirst({
+// Mencegah caching agar data selalu update saat pengguna memilih tahun
+export const revalidate = 0;
+
+export default async function ProgramKerjaPublicPage({
+  searchParams,
+}: {
+  // Menyesuaikan tipe data untuk Next.js terbaru
+  searchParams: Promise<{ year?: string }> | { year?: string }; 
+}) {
+  // 1️⃣ Ambil SEMUA masa bakti untuk pilihan di dropdown
+  const allTerms = await prisma.term.findMany({
     orderBy: { year: 'desc' },
   });
 
-  // Mengambil program kerja yang sesuai dengan masa bakti aktif
+  // 2️⃣ Tentukan masa bakti yang sedang Aktif / Dipilih berdasarkan parameter URL
+  // 🔥 PERBAIKAN: Gunakan await karena searchParams adalah Promise di Next.js 15+
+  const resolvedSearchParams = await searchParams;
+  const selectedYear = resolvedSearchParams?.year;
+  
+  let activeTerm = null;
+  if (selectedYear) {
+    // Gunakan .toString() agar tipe Number dari database cocok dengan String dari URL
+    activeTerm = allTerms.find((t) => t.year.toString() === selectedYear);
+  }
+  
+  // Jika tidak ada parameter URL atau tahun tidak ditemukan, gunakan yang terbaru
+  if (!activeTerm && allTerms.length > 0) {
+    activeTerm = allTerms[0];
+  }
+
+  // 3️⃣ Mengambil program kerja yang sesuai dengan masa bakti yang dipilih
   const programs = await prisma.program.findMany({
-    where: { termId: activeTerm?.id },
+    where: { termId: activeTerm?.id || 0 },
     include: { leader: true },
     orderBy: { id: 'desc' },
   });
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-4">
-      {/* Header Halaman */}
-      <div className="flex items-center gap-3 mb-8 border-b pb-6">
-        <div className="p-2 bg-purple-50 rounded-lg">
-          <ClipboardList className="text-purple-600" size={24} />
+      
+      {/* Tombol Kembali di Atas */}
+      <div className="mb-6">
+        <a href="/" className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-800 hover:underline transition-colors">
+          ← Kembali ke Beranda
+        </a>
+      </div>
+
+      {/* Header & Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b pb-6">
+        
+        {/* KIRI: Ikon & Judul */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-purple-50 rounded-lg">
+            <ClipboardList className="text-purple-600" size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Program Kerja OSIS</h1>
+            <p className="text-slate-500 text-sm">
+              Transparansi inisiatif dan kegiatan untuk Masa Bakti {activeTerm?.year || "-"}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Program Kerja OSIS</h1>
-          <p className="text-slate-500 text-sm">
-            Transparansi inisiatif dan kegiatan untuk Masa Bakti {activeTerm?.year || "-"}
-          </p>
-        </div>
+
+        {/* KANAN: Form Filter Dropdown */}
+        {allTerms.length > 0 && (
+          <form method="GET" className="flex items-center gap-2">
+            <Filter size={16} className="text-slate-400 hidden sm:block" />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <select
+                name="year"
+                defaultValue={activeTerm?.year?.toString()}
+                className="w-full sm:w-auto border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-700"
+              >
+                {allTerms.map((term) => (
+                  <option key={term.id} value={term.year}>
+                    {term.year}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+              >
+                Lihat
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Tabel Program Kerja */}
@@ -55,7 +119,7 @@ export default async function ProgramKerjaPublicPage() {
                   </td>
                   <td className="px-6 py-4 font-medium text-slate-600">
                     {prog.leader?.name || (
-                      <span className="text-slate-400 text-xs italic italic">Belum ditentukan</span>
+                      <span className="text-slate-400 text-xs italic">Belum ditentukan</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -77,7 +141,7 @@ export default async function ProgramKerjaPublicPage() {
             ) : (
               <tr>
                 <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
-                  Belum ada program kerja yang tercatat untuk periode ini.
+                  Belum ada program kerja yang tercatat untuk periode {activeTerm?.year}.
                 </td>
               </tr>
             )}
@@ -85,11 +149,6 @@ export default async function ProgramKerjaPublicPage() {
         </table>
       </div>
 
-      <div className="mt-8 text-center">
-        <a href="/" className="text-sm text-slate-500 hover:text-purple-600 transition-colors">
-          ← Kembali ke Beranda
-        </a>
-      </div>
     </div>
   );
 }

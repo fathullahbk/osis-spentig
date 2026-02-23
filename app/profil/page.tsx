@@ -1,15 +1,38 @@
 // app/profil/page.tsx
 import React from "react";
 import prisma from "@/lib/prisma";
-import { Users } from "lucide-react";
+import { Users, Filter } from "lucide-react";
 
-export default async function StrukturPengurusPage() {
-  // Ambil masa bakti terbaru (Aktif)
-  const activeTerm = await prisma.term.findFirst({
+// Mencegah caching agar data selalu update saat pengguna memilih tahun
+export const revalidate = 0;
+
+export default async function StrukturPengurusPage({
+  searchParams,
+}: {
+  // Menyesuaikan tipe data untuk Next.js terbaru
+  searchParams: Promise<{ year?: string }> | { year?: string }; 
+}) {
+  // 1️⃣ Ambil SEMUA masa bakti untuk pilihan di dropdown
+  const allTerms = await prisma.term.findMany({
     orderBy: { year: "desc" },
   });
 
-  // Ambil pengurus pada masa bakti tersebut
+  // 2️⃣ Tentukan masa bakti yang sedang Aktif / Dipilih
+  // 🔥 PERBAIKAN: Gunakan await karena searchParams adalah Promise di Next.js 15+
+  const resolvedSearchParams = await searchParams;
+  const selectedYear = resolvedSearchParams?.year;
+  
+  let activeTerm = null;
+  if (selectedYear) {
+    activeTerm = allTerms.find((t) => t.year.toString() === selectedYear);
+  }
+  
+  // Jika tidak ada parameter URL atau tahun tidak ditemukan, gunakan yang terbaru
+  if (!activeTerm && allTerms.length > 0) {
+    activeTerm = allTerms[0];
+  }
+
+  // 3️⃣ Ambil pengurus HANYA pada masa bakti yang dipilih
   const profiles = await prisma.profile.findMany({
     where: { termId: activeTerm?.id || 0 },
     orderBy: { name: "asc" },
@@ -26,7 +49,7 @@ export default async function StrukturPengurusPage() {
     "Bendahara Umum",
   ];
 
-  // 1️⃣ Pisahkan Jabatan Inti
+  // Pisahkan Jabatan Inti
   const jabatanInti = profiles
     .filter((p) => jabatanIntiList.includes(p.role))
     .sort(
@@ -35,21 +58,17 @@ export default async function StrukturPengurusPage() {
         jabatanIntiList.indexOf(b.role)
     );
 
-  // 2️⃣ Kelompokkan per Bidang & Tampung yang tidak terfilter
-  // Ubah ketua dan wakil menjadi Array agar bisa menampung > 1 orang
+  // Kelompokkan per Bidang & Tampung yang tidak terfilter
   const bidangMap: Record<
     number,
     { ketua: any[]; wakil: any[]; anggota: any[] }
   > = {};
   
-  // Penampung jika ada typo / jabatan di luar format agar data tidak hilang
   const pengurusLainnya: any[] = []; 
 
   profiles.forEach((p) => {
-    // Lewati jika sudah masuk jabatan inti
     if (jabatanIntiList.includes(p.role)) return;
 
-    // Regex diperlonggar (mendukung case-insensitive dan typo 'Anggot')
     const match = p.role.match(/(Ketua|Wakil Ketua|Anggota|Anggot)\s*Bidang\s*(\d+)/i);
 
     if (match) {
@@ -68,7 +87,6 @@ export default async function StrukturPengurusPage() {
         bidangMap[bidangNumber].anggota.push(p);
       }
     } else {
-      // Masukkan ke pengurus lainnya jika tidak terdeteksi
       pengurusLainnya.push(p);
     }
   });
@@ -83,19 +101,56 @@ export default async function StrukturPengurusPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8 border-b pb-4">
-        <div className="p-2 bg-blue-50 rounded-lg">
-          <Users className="text-blue-600" size={24} />
+      {/* Tombol Kembali di Atas */}
+      <div className="mb-6">
+        <a href="/" className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+          ← Kembali ke Beranda
+        </a>
+      </div>
+
+      {/* Header & Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b pb-4">
+        
+        {/* KIRI: Ikon & Judul */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <Users className="text-blue-600" size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">
+              Struktur Pengurus OSIS
+            </h1>
+            <p className="text-slate-500 text-sm">
+              Masa Bakti {activeTerm?.year || "-"}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            Struktur Pengurus OSIS
-          </h1>
-          <p className="text-slate-500 text-sm">
-            Masa Bakti {activeTerm?.year || "-"}
-          </p>
-        </div>
+
+        {/* KANAN: Form Filter Dropdown */}
+        {allTerms.length > 0 && (
+          <form method="GET" className="flex items-center gap-2">
+            <Filter size={16} className="text-slate-400 hidden sm:block" />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <select
+                name="year"
+                defaultValue={activeTerm?.year?.toString()}
+                className="w-full sm:w-auto border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+              >
+                {allTerms.map((term) => (
+                  <option key={term.id} value={term.year}>
+                    {term.year}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Lihat
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Tabel */}
@@ -103,15 +158,9 @@ export default async function StrukturPengurusPage() {
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
             <tr>
-              <th className="px-6 py-4 font-bold uppercase tracking-wider w-16">
-                No
-              </th>
-              <th className="px-6 py-4 font-bold uppercase tracking-wider">
-                Nama Lengkap
-              </th>
-              <th className="px-6 py-4 font-bold uppercase tracking-wider text-blue-600">
-                Jabatan
-              </th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider w-16">No</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider">Nama Lengkap</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider text-blue-600">Jabatan</th>
             </tr>
           </thead>
 
@@ -121,15 +170,9 @@ export default async function StrukturPengurusPage() {
                 {/* ===== Jabatan Inti ===== */}
                 {jabatanInti.map((p, index) => (
                   <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 text-slate-500 font-medium">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-800">
-                      {p.name}
-                    </td>
-                    <td className="px-6 py-4 text-blue-600 font-medium">
-                      {p.role}
-                    </td>
+                    <td className="px-6 py-4 text-slate-500 font-medium">{index + 1}</td>
+                    <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
+                    <td className="px-6 py-4 text-blue-600 font-medium">{p.role}</td>
                   </tr>
                 ))}
 
@@ -141,10 +184,7 @@ export default async function StrukturPengurusPage() {
                     <React.Fragment key={bidangNumber}>
                       {/* Header Bidang */}
                       <tr className="bg-blue-50">
-                        <td
-                          colSpan={3}
-                          className="px-6 py-3 font-bold text-blue-700"
-                        >
+                        <td colSpan={3} className="px-6 py-3 font-bold text-blue-700">
                           Bidang {bidangNumber}
                         </td>
                       </tr>
@@ -153,12 +193,8 @@ export default async function StrukturPengurusPage() {
                       {bidang.ketua.map((p) => (
                         <tr key={p.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 text-slate-400">-</td>
-                          <td className="px-6 py-4 font-semibold text-slate-800">
-                            {p.name}
-                          </td>
-                          <td className="px-6 py-4 text-blue-600">
-                            {p.role}
-                          </td>
+                          <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
+                          <td className="px-6 py-4 text-blue-600">{p.role}</td>
                         </tr>
                       ))}
 
@@ -166,12 +202,8 @@ export default async function StrukturPengurusPage() {
                       {bidang.wakil.map((p) => (
                         <tr key={p.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 text-slate-400">-</td>
-                          <td className="px-6 py-4 font-semibold text-slate-800">
-                            {p.name}
-                          </td>
-                          <td className="px-6 py-4 text-blue-600">
-                            {p.role}
-                          </td>
+                          <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
+                          <td className="px-6 py-4 text-blue-600">{p.role}</td>
                         </tr>
                       ))}
 
@@ -179,12 +211,8 @@ export default async function StrukturPengurusPage() {
                       {bidang.anggota.map((p) => (
                         <tr key={p.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 text-slate-400">-</td>
-                          <td className="px-6 py-4 font-semibold text-slate-800">
-                            {p.name}
-                          </td>
-                          <td className="px-6 py-4 text-blue-600">
-                            {p.role}
-                          </td>
+                          <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
+                          <td className="px-6 py-4 text-blue-600">{p.role}</td>
                         </tr>
                       ))}
                     </React.Fragment>
@@ -202,12 +230,8 @@ export default async function StrukturPengurusPage() {
                     {pengurusLainnya.map((p) => (
                       <tr key={p.id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 text-slate-400">-</td>
-                        <td className="px-6 py-4 font-semibold text-slate-800">
-                          {p.name}
-                        </td>
-                        <td className="px-6 py-4 text-amber-600">
-                          {p.role}
-                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
+                        <td className="px-6 py-4 text-amber-600">{p.role}</td>
                       </tr>
                     ))}
                   </React.Fragment>
@@ -215,22 +239,13 @@ export default async function StrukturPengurusPage() {
               </>
             ) : (
               <tr>
-                <td
-                  colSpan={3}
-                  className="px-6 py-10 text-center text-slate-400 italic"
-                >
-                  Belum ada data pengurus untuk masa bakti ini.
+                <td colSpan={3} className="px-6 py-10 text-center text-slate-400 italic">
+                  Belum ada data pengurus untuk masa bakti {activeTerm?.year}.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-6 text-center">
-        <a href="/" className="text-sm text-blue-600 hover:underline">
-          ← Kembali ke Beranda
-        </a>
       </div>
     </div>
   );
