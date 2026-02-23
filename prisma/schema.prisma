@@ -17,8 +17,11 @@ model Term {
   id        Int       @id @default(autoincrement())
   year      String    // Contoh: "2024/2025"
   isActive  Boolean   @default(false)
+  finances  Finance[]
   profiles  Profile[]
   programs  Program[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
 }
 
 // Tabel Profil Jabatan
@@ -43,4 +46,18 @@ model Program {
   term        Term     @relation(fields: [termId], references: [id])
   leaderId    Int?     // Bisa kosong (optional) jika PJ belum ditentukan
   leader      Profile? @relation("ProgramLeader", fields: [leaderId], references: [id])
+}
+
+// prisma/schema.prisma
+
+model Finance {
+  id          Int      @id @default(autoincrement())
+  date        DateTime // Tanggal transaksi
+  description String   // Keterangan (contoh: "Iuran Kas", "Beli Spidol")
+  type        String   // "PEMASUKAN" atau "PENGELUARAN"
+  amount      Int      // Jumlah uang
+  termId      Int      // Relasi ke masa bakti
+  term        Term     @relation(fields: [termId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

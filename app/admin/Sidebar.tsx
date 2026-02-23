@@ -3,26 +3,23 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
+// router tidak lagi dibutuhkan karena logoutAction sudah handle redirect
+import { logoutAction } from "@/lib/actions";
 import { 
   Menu, X, LayoutDashboard, Calendar, 
-  Users, FolderKanban, Globe, LogOut 
+  Users, FolderKanban, Globe, LogOut, Wallet 
 } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const router = useRouter();
-  const handleLogout = () => {
-  // 1. Tambahkan logika hapus session/token di sini
-  // Contoh: localStorage.removeItem("token") atau signOut() dari next-auth
-  
-  console.log("Admin Logout");
-  
-  // 2. Arahkan ke halaman login
-  router.push("/"); 
-};
+
+  // Fungsi logout yang sudah dirapikan
+  const handleLogout = async () => {
+    console.log("Menghapus sesi...");
+    await logoutAction(); 
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -81,6 +78,7 @@ export default function Sidebar() {
             { name: "Masa Bakti", href: "/admin/masa-bakti", icon: Calendar },
             { name: "Kelola Profil", href: "/admin/profil", icon: Users },
             { name: "Kelola Program", href: "/admin/program-kerja", icon: FolderKanban },
+            { name: "Kelola Bendahara", href: "/admin/bendahara", icon: Wallet },
           ].map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -89,7 +87,7 @@ export default function Sidebar() {
                 href={item.href}
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 p-3 rounded-lg text-sm transition-all ${
-                  isActive ? "bg-blue-600 shadow-lg" : "text-slate-400 hover:bg-slate-800"
+                  isActive ? "bg-blue-600 shadow-lg text-white font-medium" : "text-slate-400 hover:bg-slate-800 hover:text-white"
                 }`}
               >
                 <item.icon size={18} />
@@ -101,7 +99,7 @@ export default function Sidebar() {
 
         <div className="p-4 border-t border-slate-800 bg-[#0f172a]">
             <button 
-                type="button" // Sangat penting agar tidak dianggap submit form
+                type="button" 
                 onClick={handleLogout}
                 className="flex items-center gap-3 p-3 text-slate-400 hover:text-red-400 w-full text-sm font-medium transition-all rounded-xl hover:bg-red-500/10 group"
             >
