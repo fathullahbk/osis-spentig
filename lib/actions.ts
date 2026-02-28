@@ -33,7 +33,7 @@ export async function loginAction(formData: FormData) {
   } 
   // 3️⃣ Jika Salah
   else {
-    targetPath = "/login-bendahara?error=1"; // Sesuaikan rute login Anda
+    targetPath = "/login?error=1"; // Sesuaikan rute login Anda
   }
 
   // Redirect harus dilakukan di luar blok if/else jika memungkinkan, 

@@ -52,7 +52,7 @@ export default function HomePage() {
 </Link>
 
 <Link 
-  href="/login-bendahara" 
+  href="/login" 
   className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-wider"
 >
   <Wallet size={18} />
