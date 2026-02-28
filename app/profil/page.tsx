@@ -2,23 +2,43 @@
 import React from "react";
 import prisma from "@/lib/prisma";
 import { Users, Filter } from "lucide-react";
+import Image from "next/image";
 
 // Mencegah caching agar data selalu update saat pengguna memilih tahun
 export const revalidate = 0;
 
+// Komponen bantuan agar kode gambar tidak diulang-ulang
+const AvatarCell = ({ profile }: { profile: any }) => (
+  <td className="px-6 py-2">
+    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-100 border border-slate-200 mx-auto flex-shrink-0">
+      {profile.imageUrl ? (
+        <Image 
+          src={profile.imageUrl} 
+          alt={profile.name} 
+          fill 
+          className="object-cover" 
+        />
+      ) : (
+        <Image 
+          src="/favicon.ico" 
+          alt="Default Profil" 
+          fill 
+          className="object-contain p-2.5 opacity-60" 
+        />
+      )}
+    </div>
+  </td>
+);
+
 export default async function StrukturPengurusPage({
   searchParams,
 }: {
-  // Menyesuaikan tipe data untuk Next.js terbaru
   searchParams: Promise<{ year?: string }> | { year?: string }; 
 }) {
-  // 1️⃣ Ambil SEMUA masa bakti untuk pilihan di dropdown
   const allTerms = await prisma.term.findMany({
     orderBy: { year: "desc" },
   });
 
-  // 2️⃣ Tentukan masa bakti yang sedang Aktif / Dipilih
-  // 🔥 PERBAIKAN: Gunakan await karena searchParams adalah Promise di Next.js 15+
   const resolvedSearchParams = await searchParams;
   const selectedYear = resolvedSearchParams?.year;
   
@@ -27,12 +47,10 @@ export default async function StrukturPengurusPage({
     activeTerm = allTerms.find((t) => t.year.toString() === selectedYear);
   }
   
-  // Jika tidak ada parameter URL atau tahun tidak ditemukan, gunakan yang terbaru
   if (!activeTerm && allTerms.length > 0) {
     activeTerm = allTerms[0];
   }
 
-  // 3️⃣ Ambil pengurus HANYA pada masa bakti yang dipilih
   const profiles = await prisma.profile.findMany({
     where: { termId: activeTerm?.id || 0 },
     orderBy: { name: "asc" },
@@ -49,7 +67,6 @@ export default async function StrukturPengurusPage({
     "Bendahara Umum",
   ];
 
-  // Pisahkan Jabatan Inti
   const jabatanInti = profiles
     .filter((p) => jabatanIntiList.includes(p.role))
     .sort(
@@ -58,10 +75,10 @@ export default async function StrukturPengurusPage({
         jabatanIntiList.indexOf(b.role)
     );
 
-  // Kelompokkan per Bidang & Tampung yang tidak terfilter
+  // 🔥 UPDATE: Tambahkan namaBidang ke dalam Record
   const bidangMap: Record<
     number,
-    { ketua: any[]; wakil: any[]; anggota: any[] }
+    { namaBidang: string; ketua: any[]; wakil: any[]; anggota: any[] }
   > = {};
   
   const pengurusLainnya: any[] = []; 
@@ -76,7 +93,13 @@ export default async function StrukturPengurusPage({
       const bidangNumber = parseInt(match[2]);
 
       if (!bidangMap[bidangNumber]) {
-        bidangMap[bidangNumber] = { ketua: [], wakil: [], anggota: [] };
+        // 🔥 UPDATE: Inisialisasi namaBidang
+        bidangMap[bidangNumber] = { namaBidang: "", ketua: [], wakil: [], anggota: [] };
+      }
+
+      // 🔥 UPDATE: Ekstrak nama bidang dari teks setelah ":"
+      if (!bidangMap[bidangNumber].namaBidang && p.role.includes(":")) {
+        bidangMap[bidangNumber].namaBidang = p.role.split(":")[1].trim();
       }
 
       if (posisiStr === "ketua") {
@@ -101,17 +124,13 @@ export default async function StrukturPengurusPage({
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
-      {/* Tombol Kembali di Atas */}
       <div className="mb-6">
         <a href="/" className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
           ← Kembali ke Beranda
         </a>
       </div>
 
-      {/* Header & Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b pb-4">
-        
-        {/* KIRI: Ikon & Judul */}
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-50 rounded-lg">
             <Users className="text-blue-600" size={24} />
@@ -126,7 +145,6 @@ export default async function StrukturPengurusPage({
           </div>
         </div>
 
-        {/* KANAN: Form Filter Dropdown */}
         {allTerms.length > 0 && (
           <form method="GET" className="flex items-center gap-2">
             <Filter size={16} className="text-slate-400 hidden sm:block" />
@@ -153,13 +171,12 @@ export default async function StrukturPengurusPage({
         )}
       </div>
 
-      {/* Tabel */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
             <tr>
-              <th className="px-6 py-4 font-bold uppercase tracking-wider w-16">No</th>
-              <th className="px-6 py-4 font-bold uppercase tracking-wider">Nama Lengkap</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider w-24 text-center text-blue-600">Foto</th>
+              <th className="px-6 py-4 font-bold uppercase tracking-wider text-blue-600">Nama Lengkap</th>
               <th className="px-6 py-4 font-bold uppercase tracking-wider text-blue-600">Jabatan</th>
             </tr>
           </thead>
@@ -168,9 +185,9 @@ export default async function StrukturPengurusPage({
             {profiles.length > 0 ? (
               <>
                 {/* ===== Jabatan Inti ===== */}
-                {jabatanInti.map((p, index) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 text-slate-500 font-medium">{index + 1}</td>
+                {jabatanInti.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <AvatarCell profile={p} />
                     <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
                     <td className="px-6 py-4 text-blue-600 font-medium">{p.role}</td>
                   </tr>
@@ -185,14 +202,15 @@ export default async function StrukturPengurusPage({
                       {/* Header Bidang */}
                       <tr className="bg-blue-50">
                         <td colSpan={3} className="px-6 py-3 font-bold text-blue-700">
-                          Bidang {bidangNumber}
+                          {/* 🔥 UPDATE: Menampilkan nomor bidang + nama bidangnya */}
+                          Bidang {bidangNumber} {bidang.namaBidang ? `: ${bidang.namaBidang}` : ""}
                         </td>
                       </tr>
 
                       {/* Ketua */}
                       {bidang.ketua.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 text-slate-400">-</td>
+                        <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                          <AvatarCell profile={p} />
                           <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
                           <td className="px-6 py-4 text-blue-600">{p.role}</td>
                         </tr>
@@ -200,8 +218,8 @@ export default async function StrukturPengurusPage({
 
                       {/* Wakil */}
                       {bidang.wakil.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 text-slate-400">-</td>
+                        <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                          <AvatarCell profile={p} />
                           <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
                           <td className="px-6 py-4 text-blue-600">{p.role}</td>
                         </tr>
@@ -209,8 +227,8 @@ export default async function StrukturPengurusPage({
 
                       {/* Anggota */}
                       {bidang.anggota.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 text-slate-400">-</td>
+                        <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                          <AvatarCell profile={p} />
                           <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
                           <td className="px-6 py-4 text-blue-600">{p.role}</td>
                         </tr>
@@ -228,8 +246,8 @@ export default async function StrukturPengurusPage({
                       </td>
                     </tr>
                     {pengurusLainnya.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 text-slate-400">-</td>
+                      <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                        <AvatarCell profile={p} />
                         <td className="px-6 py-4 font-semibold text-slate-800">{p.name}</td>
                         <td className="px-6 py-4 text-amber-600">{p.role}</td>
                       </tr>

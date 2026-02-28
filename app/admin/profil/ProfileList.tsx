@@ -96,11 +96,19 @@ export default function ProfileList({ profiles, deleteProfile, onEdit }: Profile
                 {/* Avatar Section */}
                 <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200">
                   {profile.imageUrl ? (
-                    <Image src={profile.imageUrl} alt={profile.name} fill className="object-cover" />
+                    <Image 
+                      src={profile.imageUrl} 
+                      alt={profile.name} 
+                      fill 
+                      className="object-cover" 
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                      <Users size={24} />
-                    </div>
+                    <Image 
+                      src="/favicon.ico" 
+                      alt="Default Profil" 
+                      fill 
+                      className="object-contain p-3 opacity-60" 
+                    />
                   )}
                 </div>
                 

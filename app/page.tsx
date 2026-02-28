@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Users, LayoutList, LogIn, Sparkles, ArrowRight } from "lucide-react";
+import { UserCircle, ClipboardList, Wallet } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -34,12 +35,29 @@ export default function HomePage() {
             {/* Navigasi Kanan */}
             <nav className="flex items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-4 sm:gap-8 mr-2 sm:mr-4">
-                <Link href="/profil" className="text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-wider">
-                  Profil
-                </Link>
-                <Link href="/program-kerja" className="text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-wider">
-                  Program
-                </Link>
+                <Link 
+  href="/profil" 
+  className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-wider"
+>
+  <UserCircle size={18} />
+  <span>PENGURUS</span>
+</Link>
+
+<Link 
+  href="/program-kerja" 
+  className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-wider"
+>
+  <ClipboardList size={18} />
+  <span>PROGRAM</span>
+</Link>
+
+<Link 
+  href="/login-bendahara" 
+  className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-wider"
+>
+  <Wallet size={18} />
+  <span>KEUANGAN</span>
+</Link>
               </div>
 
               {/* Tombol Portal Admin */}

@@ -14,7 +14,7 @@ export default async function LoginPage({
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 selection:bg-blue-200 selection:text-blue-900">
       <div className="max-w-md w-full">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Login Admin</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Login</h1>
           <p className="text-slate-500 mt-2 font-medium">Masukkan kredensial untuk akses OSIS SPENTIG</p>
         </div>
 
